@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Hybrid RAG & Voice Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --border: #1f2937;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --danger: #ef4444;
+      --success: #10b981;
+      --accent: #8b5cf6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      background: #1e293b;
+      padding: 6px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      flex: 1;
+      padding: 10px 14px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-tab.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .voice-box {
+      text-align: center;
+      padding: 30px 16px;
+      border: 2px dashed #334155;
+      border-radius: 14px;
+      background: #0f172a;
+    }
+    .mic-button {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      font-size: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mic-button:hover {
+      background: var(--primary);
+      color: #fff;
+      transform: scale(1.05);
+    }
+    .mic-button.recording {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 18px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin: 12px 0;
+    }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover { background: #334155; }
+    .btn-success { background: var(--success); }
+    .btn-danger { background: var(--danger); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: #1e293b;
+      color: #60a5fa;
+      border: 1px solid #3b82f644;
+    }
+    .result-box {
+      background: #0d1322;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 18px;
+    }
+    .answer-text {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: #f9fafb;
+      margin: 14px 0;
+      white-space: pre-wrap;
+    }
+    .sources-box {
+      background: #111c33;
+      border-left: 3px solid var(--primary);
+      padding: 10px 14px;
+      margin: 14px 0;
+      font-size: 0.88rem;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+    .accordion {
+      margin-top: 12px;
+      border-top: 1px solid #1e293b;
+      padding-top: 12px;
+    }
+    details {
+      margin-bottom: 8px;
+      background: #131d31;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    summary {
+      cursor: pointer;
+      font-weight: 500;
+      color: #93c5fd;
+    }
+    details pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      overflow-x: auto;
+      margin-top: 8px;
+      white-space: pre-wrap;
+    }
+    .loader {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Agentic Hybrid RAG Platform</h1>
+      <p>Multi-Agent Document Intelligence with Groq Whisper Voice & OCR Integration</p>
+    </header>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('tab-voice')">🎙️ Voice Query</button>
+      <button class="nav-tab" onclick="switchTab('tab-text')">💬 Text Query</button>
+      <button class="nav-tab" onclick="switchTab('tab-ingest')">📁 Document & OCR Ingest</button>
+      <button class="nav-tab" onclick="switchTab('tab-stats')">📊 Knowledge Base</button>
+    </div>
+
+    <!-- TAB 1: VOICE QUERY -->
+    <div id="tab-voice" class="tab-content active">
+      <div class="card">
+        <div class="card-title">🎙️ Voice Interaction via Microphone</div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+          Ask questions naturally using your microphone. Speech is transcribed using <strong>Groq Whisper (<span id="stt-model-label">whisper-large-v3-turbo</span>)</strong> and analyzed by the 3-agent RAG workflow.
+        </p>
+
+        <div class="voice-box">
+          <button id="micBtn" class="mic-button" onclick="toggleRecording()">🎤</button>
+          <div class="timer" id="recordingTimer">00:00</div>
+          <p id="micStatus" style="color: var(--text-muted); font-size: 0.9rem;">Click microphone to record your question</p>
+          <audio id="audioPreview" controls style="display: none; margin: 14px auto; max-width: 320px;"></audio>
+        </div>
+
+        <div style="margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="submitVoiceBtn" class="btn" onclick="submitVoiceQuery()" disabled>
+            🚀 Submit Voice Query
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TEXT QUERY -->
+    <div id="tab-text" class="tab-content">
+      <div class="card">
+        <div class="card-title">💬 Ask a Question</div>
+        <textarea id="textQueryInput" rows="3" placeholder="e.g. What are the key architecture components and experimental findings?"></textarea>
+        <div class="grid-2">
+          <div>
+            <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Source Citation Style</label>
+            <select id="sourceStyleSelect">
+              <option value="numbered">Numbered ([1], [2])</option>
+              <option value="bullet">Bullet points</option>
+              <option value="table">Markdown Table</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Max Analyst Feedback Loops</label>
+            <select id="analystLoopsSelect">
+              <option value="2">2 loops (Standard)</option>
+              <option value="1">1 loop (Faster)</option>
+              <option value="3">3 loops (Deep reasoning)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end;">
+          <button id="submitTextBtn" class="btn" onclick="submitTextQuery()">🔍 Run Agentic Query</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: INGEST -->
+    <div id="tab-ingest" class="tab-content">
+      <div class="card">
+        <div class="card-title">📁 Ingest Documents (PDF, DOCX, TXT, PPTX) & Images (OCR)</div>
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Upload Document or Image</label>
+          <input type="file" id="fileUploadInput" style="padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; width: 100%; color: var(--text);">
+          <button class="btn" style="margin-top: 10px;" onclick="uploadFile()">📤 Ingest Uploaded File</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #1e293b; margin: 18px 0;">
+
+        <div>
+          <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Or Ingest via URL / Wikipedia Topic</label>
+          <input type="text" id="pathInput" placeholder="e.g. wiki:Retrieval-augmented generation or https://example.com">
+          <button class="btn btn-secondary" onclick="ingestPath()">🌐 Ingest URL / Wiki</button>
+        </div>
+        <div id="ingestResult" style="margin-top: 14px; font-size: 0.9rem;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: STATS -->
+    <div id="tab-stats" class="tab-content">
+      <div class="card">
+        <div class="card-title" style="justify-content: space-between;">
+          <span>📊 Knowledge Base Overview</span>
+          <button class="btn btn-secondary" onclick="loadStats()">🔄 Refresh</button>
+        </div>
+        <div id="statsContent" style="font-size: 0.95rem; color: var(--text-muted);">
+          Loading knowledge base statistics...
+        </div>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-danger" onclick="clearKnowledgeBase()">🗑️ Clear Entire Collection</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS DISPLAY SECTION -->
+    <div id="resultContainer" class="card" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span class="status-badge" id="resultBadge">RAG Response</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" id="ttsBtn" onclick="toggleReadAloud()">🔊 Read Aloud</button>
+          <button class="btn btn-success" id="reportBtn" onclick="generateReport()">📄 Generate PDF Report</button>
+        </div>
+      </div>
+
+      <div id="transcriptionNotice" style="display: none; background: #1e1b4b; border: 1px solid #4338ca; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;">
+        <span style="font-weight: 600; color: #a5b4fc;">🎙️ Spoken Query Transcribed:</span>
+        <span id="transcriptionText" style="color: #e0e7ff; margin-left: 6px;"></span>
+      </div>
+
+      <h3 style="font-size: 1.1rem; color: #93c5fd; margin-bottom: 8px;" id="resultQuestion"></h3>
+      <div class="answer-text" id="resultAnswer"></div>
+
+      <div class="card-title" style="font-size: 0.95rem; margin-top: 14px; margin-bottom: 6px;">📚 Validated Sources</div>
+      <div class="sources-box" id="resultSources"></div>
+
+      <div class="accordion">
+        <details>
+          <summary>🧠 Analyst Agent Reasoning & Tool Calls</summary>
+          <pre id="resultAnalysis"></pre>
+        </details>
+        <details>
+          <summary>📑 Retrieved Evidence Chunks (<span id="evidenceCount">0</span> chunks)</summary>
+          <pre id="resultEvidence"></pre>
+        </details>
+      </div>
+
+      <div id="reportNotification" style="display: none; margin-top: 14px; padding: 10px; background: #064e3b; border-radius: 8px; color: #6ee7b7; font-size: 0.9rem;"></div>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedBlob = null;
+    let timerInterval = null;
+    let secondsRecorded = 0;
+    let currentResultData = null;
+    let speechSynthUtterance = null;
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+      if (tabId === 'tab-stats') loadStats();
+    }
+
+    async function toggleRecording() {
+      const micBtn = document.getElementById('micBtn');
+      const micStatus = document.getElementById('micStatus');
+      const preview = document.getElementById('audioPreview');
+
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        micBtn.classList.remove('recording');
+        micStatus.innerText = 'Processing recorded audio...';
+        clearInterval(timerInterval);
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(recordedBlob);
+          preview.src = audioUrl;
+          preview.style.display = 'block';
+          document.getElementById('submitVoiceBtn').disabled = false;
+          micStatus.innerText = 'Audio captured. Click "Submit Voice Query" to run.';
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        micBtn.classList.add('recording');
+        micStatus.innerText = 'Listening... Speak your question into the microphone';
+        secondsRecorded = 0;
+        document.getElementById('recordingTimer').innerText = '00:00';
+        timerInterval = setInterval(() => {
+          secondsRecorded++;
+          const mins = String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
+          const secs = String(secondsRecorded % 60).padStart(2, '0');
+          document.getElementById('recordingTimer').innerText = `${mins}:${secs}`;
+        }, 1000);
+
+      } catch (err) {
+        alert('Could not access microphone: ' + err.message);
+      }
+    }
+
+    async function submitVoiceQuery() {
+      if (!recordedBlob) return;
+      const btn = document.getElementById('submitVoiceBtn');
+      btn.innerHTML = '<span class="loader"></span> Transcribing & Reasoning...';
+      btn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('audio_file', recordedBlob, 'mic_question.webm');
+      formData.append('source_style', 'numbered');
+      formData.append('max_analyst_loops', 2);
+
+      try {
+        const res = await fetch('/api/v1/voice/query', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Voice query failed');
+        renderResult(data, true);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        btn.innerHTML = '🚀 Submit Voice Query';
+        btn.disabled = false;
+      }
+    }
+
+    async function submitTextQuery() {
+      const input = document.getElementById('textQueryInput').value.trim();
+      if (!input) return alert('Please enter a question');
+
+      const btn = document.getElementById('submitTextBtn');
+      btn.innerHTML = '<span class="loader"></span> Reasoning with Agents...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/v1/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: input,
+            source_style: document.getElementById('sourceStyleSelect').value,
+            max_analyst_loops: parseInt(document.getElementById('analystLoopsSelect').value),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Query failed');
+        renderResult(data, false);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        btn.innerHTML = '🔍 Run Agentic Query';
+        btn.disabled = false;
+      }
+    }
+
+    function renderResult(data, isVoice) {
+      currentResultData = data;
+      document.getElementById('resultContainer').style.display = 'block';
+      document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+
+      if (isVoice && data.transcription) {
+        document.getElementById('transcriptionNotice').style.display = 'block';
+        document.getElementById('transcriptionText').innerText = `"${data.transcription.text}" (via ${data.transcription.provider} ${data.transcription.model})`;
+      } else {
+        document.getElementById('transcriptionNotice').style.display = 'none';
+      }
+
+      document.getElementById('resultQuestion').innerText = data.question;
+      document.getElementById('resultAnswer').innerText = data.answer;
+      document.getElementById('resultSources').innerText = data.sources || 'No direct source citations.';
+      document.getElementById('resultAnalysis').innerText = data.analysis || 'No analysis steps logged.';
+      document.getElementById('evidenceCount').innerText = (data.evidence || []).length;
+      document.getElementById('resultEvidence').innerText = JSON.stringify(data.evidence || [], null, 2);
+      document.getElementById('reportNotification').style.display = 'none';
+    }
+
+    function toggleReadAloud() {
+      const btn = document.getElementById('ttsBtn');
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        btn.innerText = '🔊 Read Aloud';
+        return;
+      }
+      const answer = document.getElementById('resultAnswer').innerText;
+      if (!answer) return;
+      speechSynthUtterance = new SpeechSynthesisUtterance(answer);
+      speechSynthUtterance.onend = () => { btn.innerText = '🔊 Read Aloud'; };
+      btn.innerText = '⏹️ Stop Reading';
+      window.speechSynthesis.speak(speechSynthUtterance);
+    }
+
+    async function generateReport() {
+      if (!currentResultData) return;
+      const btn = document.getElementById('reportBtn');
+      btn.innerHTML = '<span class="loader"></span> Generating PDF...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/v1/reports/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            result: {
+              question: currentResultData.question,
+              answer: currentResultData.answer,
+              analysis: currentResultData.analysis,
+              sources: currentResultData.sources,
+            },
+            instructions: 'professional executive summary with crisp formatting and navy styling',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Report generation failed');
+
+        const notif = document.getElementById('reportNotification');
+        notif.style.display = 'block';
+        notif.innerHTML = `✅ Report generated: <strong>${data.filename}</strong> — <a href="${data.download_url}" target="_blank" style="color: #67e8f9; text-decoration: underline; font-weight: bold;">Download PDF Here</a>`;
+      } catch (e) {
+        alert('Report generation failed: ' + e.message);
+      } finally {
+        btn.innerHTML = '📄 Generate PDF Report';
+        btn.disabled = false;
+      }
+    }
+
+    async function uploadFile() {
+      const input = document.getElementById('fileUploadInput');
+      if (!input.files || input.files.length === 0) return alert('Select a file to upload');
+
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const resBox = document.getElementById('ingestResult');
+      resBox.innerHTML = '<span class="loader"></span> Ingesting and embedding document...';
+
+      try {
+        const res = await fetch('/api/v1/documents/ingest-file', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Ingestion failed');
+        resBox.innerHTML = `<span style="color: var(--success);">✓ Ingested <strong>${data.source}</strong> (${data.chunks_ingested} chunks).</span>`;
+        input.value = '';
+      } catch (e) {
+        resBox.innerHTML = `<span style="color: var(--danger);">✗ Error: ${e.message}</span>`;
+      }
+    }
+
+    async function ingestPath() {
+      const path = document.getElementById('pathInput').value.trim();
+      if (!path) return alert('Enter a URL or wiki query');
+
+      const resBox = document.getElementById('ingestResult');
+      resBox.innerHTML = '<span class="loader"></span> Ingesting...';
+
+      try {
+        const res = await fetch('/api/v1/documents/ingest-path', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: path }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Ingestion failed');
+        resBox.innerHTML = `<span style="color: var(--success);">✓ Ingested <strong>${data.source}</strong> (${data.chunks_ingested} chunks).</span>`;
+        document.getElementById('pathInput').value = '';
+      } catch (e) {
+        resBox.innerHTML = `<span style="color: var(--danger);">✗ Error: ${e.message}</span>`;
+      }
+    }
+
+    async function loadStats() {
+      const box = document.getElementById('statsContent');
+      box.innerHTML = '<span class="loader"></span> Loading statistics...';
+      try {
+        const res = await fetch('/api/v1/stats');
+        const data = await res.json();
+        box.innerHTML = `
+          <p><strong>Collection Name:</strong> ${data.collection_name}</p>
+          <p><strong>Total Chunks Stored:</strong> ${data.total_chunks}</p>
+          <p><strong>Unique Sources:</strong> ${data.unique_sources_count}</p>
+          <div style="margin-top: 10px;">
+            <strong>Indexed Sources:</strong>
+            <ul style="margin-left: 20px; margin-top: 6px;">
+              ${data.sources.map(s => `<li>${s} <a href="#" onclick="deleteSource('${s}')" style="color: var(--danger); font-size: 0.8rem; margin-left: 8px;">[delete]</a></li>`).join('') || '<li>No documents indexed yet.</li>'}
+            </ul>
+          </div>
+        `;
+      } catch (e) {
+        box.innerHTML = `<span style="color: var(--danger);">Failed to load stats: ${e.message}</span>`;
+      }
+    }
+
+    async function deleteSource(src) {
+      if (!confirm(`Delete source: ${src}?`)) return;
+      try {
+        const res = await fetch(`/api/v1/documents/${encodeURIComponent(src)}`, { method: 'DELETE' });
+        const data = await res.json();
+        alert(`Deleted ${src}. Remaining chunks: ${data.remaining_chunks}`);
+        loadStats();
+      } catch (e) {
+        alert('Delete failed: ' + e.message);
+      }
+    }
+
+    async function clearKnowledgeBase() {
+      if (!confirm('Are you sure you want to delete ALL indexed documents in the knowledge base?')) return;
+      try {
+        const res = await fetch('/api/v1/documents', { method: 'DELETE' });
+        const data = await res.json();
+        alert(data.message);
+        loadStats();
+      } catch (e) {
+        alert('Clear failed: ' + e.message);
+      }
+    }
+
+    // Initialize health on load
+    fetch('/api/v1/health')
+      .then(r => r.json())
+      .then(d => {
+        if (d.stt_model) document.getElementById('stt-model-label').innerText = d.stt_model;
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>
