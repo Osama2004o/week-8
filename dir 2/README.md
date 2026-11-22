@@ -180,11 +180,26 @@ The knowledge base also exposes methods to ingest multiple sources, list stored 
 - **Speech-to-Text & Voice:** Groq Whisper (`whisper-large-v3-turbo`) with Faster-Whisper fallback
 - **Web API framework:** FastAPI, Uvicorn, Pydantic V2
 - **Testing:** pytest and mocked language-model responses
+- **Infrastructure as Code:** Terraform (modular AWS configuration: networking, storage, security, cache, compute)
+
+## Infrastructure as Code
+
+The [`terraform/`](terraform/) directory contains a modular Terraform configuration describing a future AWS deployment: an Application Load Balancer in public subnets, ECS Fargate tasks in private subnets, Amazon EFS for ChromaDB and image uploads, S3 for raw documents, ElastiCache Redis for caching, Secrets Manager for credentials, and a NAT Gateway for outbound OpenRouter access.
+
+`offline_plan_mode` defaults to `true`, so `terraform init`, `validate`, and `plan` run without AWS credentials. **Do not run `terraform apply` unless you intend to provision real, billable AWS resources.**
+
+```bash
+terraform -chdir=terraform init
+terraform -chdir=terraform validate
+terraform -chdir=terraform plan
+```
+
+See [`terraform/README.md`](terraform/README.md) for the full infrastructure design, variables, and deployment notes.
 
 ## Project Structure
 
 ```text
-agentic-rag-fastapi-platform/
+agentic-hybrid-rag/
 ├── api/
 │   ├── routes/
 │   │   ├── system.py           # Health checks and knowledge base stats
@@ -205,7 +220,7 @@ agentic-rag-fastapi-platform/
 │   ├── voice.py                # Groq Whisper STT and voice query integration
 │   ├── retriever_agent.py      # LangGraph retrieval workflow
 │   ├── retriever_tools.py      # Hybrid-search and selection tools
-│   ├── analyst_agent.py       # Evidence analysis and feedback loop
+│   ├── analyst_agent.py        # Evidence analysis and feedback loop
 │   ├── analyst_tools.py       # Calculation and analysis tools
 │   ├── answer_agent.py        # Final answer generation and validation
 │   ├── answer_tools.py        # Citation, source, and response tools
@@ -214,6 +229,14 @@ agentic-rag-fastapi-platform/
 │   └── orchestrator.py        # Connects the three agents
 ├── database/
 │   └── chroma_pipeline.py     # Ingestion, embedding, persistence, retrieval
+├── terraform/
+│   ├── main.tf                # Root module wiring all infrastructure modules
+│   ├── providers.tf           # Terraform and AWS provider configuration
+│   ├── variables.tf           # Typed, validated input variables
+│   ├── outputs.tf             # VPC, ECR, ECS, ALB, EFS, S3, and Redis outputs
+│   ├── terraform.tfvars.example
+│   ├── README.md              # Infrastructure documentation
+│   └── modules/               # networking, storage, security, cache, compute
 ├── tests/
 │   ├── test_api.py            # FastAPI endpoint tests
 │   ├── test_voice.py          # Voice query and Groq Whisper STT tests
@@ -222,6 +245,7 @@ agentic-rag-fastapi-platform/
 │   ├── test_retriever.py
 │   ├── test_analyst.py
 │   └── test_answer.py
+├── reports/                   # Generated PDF reports (runtime)
 ├── main.py                     # Root server runner
 ├── .env.example
 ├── .gitignore
@@ -239,9 +263,11 @@ agentic-rag-fastapi-platform/
 - An **OpenRouter API key** and access to a compatible model
 - Internet access for initial model downloads and external LLM calls
 
-> The repository provides a **Python API**, not a finished web or desktop interface. The following examples run from the project root.
+> The project exposes a **Python API** and a lightweight **web UI**, not a packaged desktop application. The following examples run from the project root.
 
-### 1. Clone the repository
+### 1. Get the project
+
+In the Week 8 repository this project lives in `dir 2/`; run all commands below from that directory. To use the standalone repository instead:
 
 ```bash
 git clone https://github.com/Osama2004o/agentic-hybrid-rag.git
